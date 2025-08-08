@@ -1,4 +1,4 @@
-# Workflow by se2cird <https://github.com/se2cird>, ask me if you have any questions
+# Workflow by se2crid <https://github.com/se2crid>, ask me if you have any questions
 
 # Workflow to build and upload AppImage for Linux, macOS Universal DMG, and Windows .exe
 
@@ -20,7 +20,7 @@ on:
 # Global environment variables
 env:
   BINARY_NAME: idevice_pair
-  APP_NAME: iDevicePair
+  APP_NAME: idevicepair
   VERSION: ${{ github.event.inputs.version }}
   ICON_PNG: icon.png
   CARGO_TERM_COLOR: always

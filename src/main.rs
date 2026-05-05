@@ -502,7 +502,11 @@ fn main() {
                         }
                         None => {
                             gui_sender
-                                .send(GuiCommands::DevMode(Err(IdeviceError::UnexpectedResponse)))
+                                .send(GuiCommands::DevMode(Err(
+                                    IdeviceError::UnexpectedResponse(
+                                        "DeveloperModeStatus was not a boolean".to_string(),
+                                    ),
+                                )))
                                 .unwrap();
                             continue;
                         }
@@ -741,7 +745,10 @@ fn main() {
                             None => {
                                 gui_sender
                                     .send(GuiCommands::InstalledApps(Err(
-                                        IdeviceError::UnexpectedResponse,
+                                        IdeviceError::UnexpectedResponse(
+                                            "Installed app entry was not a dictionary with a CFBundleDisplayName string"
+                                                .to_string(),
+                                        ),
                                     )))
                                     .unwrap();
                                 continue 'main;

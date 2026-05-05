@@ -102,6 +102,7 @@ fn supported_apps_for_mode(mode: PairingMode) -> HashMap<String, String> {
             supported_apps.insert("SparseBox".to_string(), "pairingFile.plist".to_string());
             supported_apps.insert("ByeTunes".to_string(), "pairingFile.plist".to_string());
             supported_apps.insert("StikDebug".to_string(), "pairingFile.plist".to_string());
+            supported_apps.insert("Ksign".to_string(), "pairingFile.plist".to_string());
         }
         PairingMode::RemotePairing => {
             supported_apps
@@ -110,6 +111,7 @@ fn supported_apps_for_mode(mode: PairingMode) -> HashMap<String, String> {
             supported_apps.insert("Protokolle".to_string(), "pairingFile.plist".to_string());
             supported_apps.insert("Antrag".to_string(), "pairingFile.plist".to_string());
             supported_apps.insert("Feather".to_string(), "pairingFile.plist".to_string());
+            supported_apps.insert("Ksign".to_string(), "pairingFile.plist".to_string());
         }
     }
     supported_apps

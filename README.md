@@ -14,6 +14,7 @@ A cross-platform GUI application for managing iOS device pairing and wireless de
   - [Feather](https://github.com/khcrysalis/Feather)
   - [Protokolle](https://github.com/khcrysalis/Protokolle)
   - [Antrag](https://github.com/khcrysalis/Antrag)
+  - [KSign](https://github.com/Nyasami/Ksign)
 - **Developer Mode**: Monitor developer mode status
 - **Developer Disk Image Mounting**: Automatically mount required developer images
 
@@ -118,6 +119,7 @@ The tool includes built-in support for pairing file formats used by:
 - **Feather**: `pairingFile.plist`
 - **Protokolle**: `pairingFile.plist`
 - **Antrag**: `pairingFile.plist`
+- **KSign**: `pairingFile.plist`
 
 ## Dependencies
 

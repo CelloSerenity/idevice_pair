@@ -105,6 +105,7 @@ fn supported_apps_for_mode(mode: PairingMode) -> HashMap<String, String> {
             supported_apps.insert("Antrag".to_string(), "pairingFile.plist".to_string());
             supported_apps.insert("Feather".to_string(), "pairingFile.plist".to_string());
             supported_apps.insert("StikStore".to_string(), "pairingFile.plist".to_string());
+            supported_apps.insert("Ksign".to_string(), "pairingFile.plist".to_string());
         }
         PairingMode::RemotePairing => {
             supported_apps.insert(
@@ -118,6 +119,7 @@ fn supported_apps_for_mode(mode: PairingMode) -> HashMap<String, String> {
             supported_apps.insert("Antrag".to_string(), "pairingFile.plist".to_string());
             supported_apps.insert("Feather".to_string(), "pairingFile.plist".to_string());
             supported_apps.insert("Reynard".to_string(), "pairingFile.plist".to_string());
+            supported_apps.insert("Ksign".to_string(), "pairingFile.plist".to_string());
         }
     }
     supported_apps
@@ -508,7 +510,11 @@ fn main() {
                         }
                         None => {
                             gui_sender
-                                .send(GuiCommands::DevMode(Err(IdeviceError::UnexpectedResponse)))
+                                .send(GuiCommands::DevMode(Err(
+                                    IdeviceError::UnexpectedResponse(
+                                        "DeveloperModeStatus was not a boolean".to_string(),
+                                    ),
+                                )))
                                 .unwrap();
                             continue;
                         }
@@ -747,7 +753,10 @@ fn main() {
                             None => {
                                 gui_sender
                                     .send(GuiCommands::InstalledApps(Err(
-                                        IdeviceError::UnexpectedResponse,
+                                        IdeviceError::UnexpectedResponse(
+                                            "Installed app entry was not a dictionary with a CFBundleDisplayName string"
+                                                .to_string(),
+                                        ),
                                     )))
                                     .unwrap();
                                 continue 'main;

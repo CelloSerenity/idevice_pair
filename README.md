@@ -117,6 +117,7 @@ The tool includes built-in support for pairing file formats used by:
 - **StikDebug**: RPPairing: `rp_pairing_file.plist`, Lockdown: `pairingFile.plist`.
 - **SparseBox**: `pairingFile.plist`
 - **Feather**: `pairingFile.plist`
+- **Protokolle**: `pairingFile.plist`
 - **Antrag**: `pairingFile.plist`
 - **KSign**: `pairingFile.plist`
 

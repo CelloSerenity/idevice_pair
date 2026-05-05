@@ -168,6 +168,16 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - name: Free disk space
+        run: |
+          df -h
+          sudo rm -rf /Library/Developer/CoreSimulator/Profiles/Runtimes/*
+          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/WatchOS.platform
+          sudo rm -rf /Applications/Xcode.app/Contents/Developer/Platforms/AppleTVOS.platform
+          sudo rm -rf /Users/runner/Library/Android
+          sudo rm -rf /usr/local/lib/node_modules
+          df -h
+
       - name: Download x86_64 slice
         uses: actions/download-artifact@v8
         with:

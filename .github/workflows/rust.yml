@@ -90,13 +90,13 @@ jobs:
       - name: Build AppImage
         run: |
           mkdir -p dist
-          FILENAME="dist/${{ env.APP_NAME }}-linux-${{ matrix.arch }}.AppImage"
+          FILENAME="dist/${{ env.APP_NAME }}--linux-${{ matrix.arch }}.AppImage"
           ./appimagetool.AppImage AppDir "$FILENAME"
 
       - name: Upload Linux bundle
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.APP_NAME }}-linux-${{ matrix.arch }}
+          name: ${{ env.APP_NAME }}--linux-${{ matrix.arch }}
           path: dist/*
 
   build-windows:
@@ -106,9 +106,9 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - target: x86_64-pc-windows-gnu
+          - target: x86_64-pc-windows-msvc
             arch: x86_64
-            runner: ubuntu-24.04
+            runner: windows-latest
 
     steps:
       - uses: actions/checkout@v6
@@ -116,11 +116,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.target }}
-
-      - name: Install mingw-w64
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y mingw-w64 nasm
 
       - name: Cache Cargo
         uses: actions/cache@v5
@@ -133,16 +128,17 @@ jobs:
           restore-keys: windows-cargo-
 
       - name: Build binary
+        shell: bash
         run: |
           cargo build --release --no-default-features --bin ${{ env.BINARY_NAME }} --target ${{ matrix.target }}
           mkdir -p dist
           cp target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}.exe \
-            dist/${{ env.APP_NAME }}-windows-${{ matrix.arch }}.exe
+            dist/${{ env.APP_NAME }}--windows-${{ matrix.arch }}.exe
 
       - name: Upload Windows bundle
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.APP_NAME }}-windows-${{ matrix.arch }}
+          name: ${{ env.APP_NAME }}--windows-${{ matrix.arch }}
           path: dist/*.exe
 
   build-macos-slices:
@@ -316,7 +312,7 @@ jobs:
 
       - name: Create DMG
         run: |
-          DMG="dist/${{ env.APP_NAME }}-macos-universal.dmg"
+          DMG="dist/${{ env.APP_NAME }}--macos-universal.dmg"
           mkdir -p dist dmg-staging
           trap 'rm -rf dmg-staging' EXIT
           mv "${{ env.APP_NAME }}.app" dmg-staging/
@@ -346,5 +342,5 @@ jobs:
       - name: Upload Universal DMG
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.APP_NAME }}-macos-universal
-          path: dist/${{ env.APP_NAME }}-macos-universal.dmg
+          name: ${{ env.APP_NAME }}--macos-universal
+          path: dist/${{ env.APP_NAME }}--macos-universal.dmg

@@ -222,13 +222,13 @@ jobs:
       - name: Download ARM slice
         uses: actions/download-artifact@v8
         with:
-          name: ${{ env.BINARY_NAME }}-macos-slice-arm
+          name: slice-arm64
           path: dist/slices
 
       - name: Download Intel slice
         uses: actions/download-artifact@v8
         with:
-          name: ${{ env.BINARY_NAME }}-macos-slice-intel
+          name: slice-x86_64
           path: dist/slices
 
       - name: Import Developer ID Certificate

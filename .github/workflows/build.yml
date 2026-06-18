@@ -219,17 +219,17 @@ jobs:
           sudo rm -rf /usr/local/lib/node_modules
           df -h
 
-      - name: Download ARM slice
-        uses: actions/download-artifact@v8
-        with:
-          name: slice-arm64
-          path: dist/slices
-
-      - name: Download Intel slice
+      - name: Download x86_64 slice
         uses: actions/download-artifact@v8
         with:
           name: slice-x86_64
-          path: dist/slices
+          path: slice-x86_64
+
+      - name: Download arm64 slice
+        uses: actions/download-artifact@v8
+        with:
+          name: slice-arm64
+          path: slice-arm64
 
       - name: Import Developer ID Certificate
         if: env.HAVE_SIGNING_SECRETS == 'true'
@@ -244,11 +244,12 @@ jobs:
           VERSION="$(awk -F '"' '/^version = / { print $2; exit }' Cargo.toml)"
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
-          lipo \
-            dist/slices/slice-x86_64 \
-            dist/slices/slice-arm64 \
+          lipo slice-x86_64/${{ env.BINARY_NAME }} \
+               slice-arm64/${{ env.BINARY_NAME }} \
             -create -output "$APP/Contents/MacOS/${{ env.APP_NAME }}"
-          rm -rf dist/slices
+
+          rm -rf slice-x86_64
+          rm -rf slice-arm64
 
           cat > "$APP/Contents/Info.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>

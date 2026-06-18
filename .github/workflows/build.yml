@@ -182,7 +182,7 @@ jobs:
             ~/.cargo/git
             target
           key: ${{matrix.target}}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: linux-cargo-
+          restore-keys: macos-cargo-
 
       - name: Build ${{ matrix.arch }} slice
         run: |

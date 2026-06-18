@@ -245,8 +245,8 @@ jobs:
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
           lipo \
-            dist/slices/${{ env.BINARY_NAME }}-macos-x86_64 \
-            dist/slices/${{ env.BINARY_NAME }}-macos-arm64 \
+            dist/slices/slice-x86_64 \
+            dist/slices/slice-arm64 \
             -create -output "$APP/Contents/MacOS/${{ env.APP_NAME }}"
           rm -rf dist/slices
 

@@ -20,6 +20,7 @@ env:
   BINARY_NAME: idevice_pair
   APP_NAME: idevice_pair
   ICON_PNG: icon.png
+  ICON_ICNS_NAME: icon
   CARGO_TERM_COLOR: always
 
 jobs:
@@ -261,12 +262,12 @@ jobs:
             <key>CFBundleShortVersionString</key><string>${VERSION}</string>
             <key>CFBundleExecutable</key><string>${{ env.APP_NAME }}</string>
             <key>CFBundlePackageType</key><string>APPL</string>
-            <key>CFBundleIconFile</key><string>icon.icns</string>
-            <key>CFBundleIconName</key><string>icon</string>
+            <key>CFBundleIconFile</key><string>${{ env.ICON_ICNS_NAME }}.icns</string>
+            <key>CFBundleIconName</key><string>${{ env.ICON_ICNS_NAME }}</string>
           </dict></plist>
           EOF
 
-          cp icon.icns "$APP/Contents/Resources/"
+          cp ${{ env.ICON_ICNS_NAME }}.icns "$APP/Contents/Resources/"
           cp Assets.car "$APP/Contents/Resources/"
           xattr -rc "$APP"
 

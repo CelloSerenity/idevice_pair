@@ -155,32 +155,24 @@ jobs:
           path: dist/*.exe
 
   build-macos-slices:
-    name: Build macOS ${{ matrix.arch }} slice
-    runs-on: ubuntu-24.04
+    name: Build macOS slices
+    runs-on: macos-latest
     strategy:
-      fail-fast: true
       matrix:
         include:
-          - target: aarch64-apple-darwin
-            arch: arm
-            suffix: arm64
-            osxcross_prefix: arm64-apple-darwin21.4
-          - target: x86_64-apple-darwin
-            arch: intel
-            suffix: x86_64
-            osxcross_prefix: x86_64-apple-darwin21.4
+          - arch: x86_64
+            target: x86_64-apple-darwin
+          - arch: arm64
+            target: aarch64-apple-darwin
 
     steps:
       - uses: actions/checkout@v6
 
-      - uses: dtolnay/rust-toolchain@stable
+      - name: Set up Rust for ${{ matrix.arch }}
+        uses: dtolnay/rust-toolchain@stable
         with:
+          components: rustfmt, clippy
           targets: ${{ matrix.target }}
-
-      - name: Setup osxcross
-        uses: Timmmm/setup-osxcross@v3
-        with:
-          osx-version: "12.3"
 
       - name: Cache Cargo
         uses: actions/cache@v5
@@ -189,52 +181,21 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             target
-          key: macos-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: macos-cargo-
+          key: ${{matrix.target}}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: linux-cargo-
 
-      - name: Build binary
+      - name: Build ${{ matrix.arch }} slice
         run: |
-          target_env=$(echo "${{ matrix.target }}" | tr '-' '_')
-          target_env_upper=$(echo "${target_env}" | tr '[:lower:]' '[:upper:]')
-          prefix="${{ matrix.osxcross_prefix }}"
-          osxcross_bin="$(dirname "$(command -v "${prefix}-clang")")"
-          osxcross_root="$(cd "${osxcross_bin}/.." && pwd)"
-          sdk_dir="${osxcross_root}/SDK"
-          if [ -d "${sdk_dir}" ]; then
-            sdkroot="$(ls -d "${sdk_dir}"/MacOSX*.sdk 2>/dev/null | sort -V | tail -n1)"
-            if [ -n "${sdkroot}" ]; then
-              export SDKROOT="${sdkroot}"
-            fi
-          fi
-          export MACOSX_DEPLOYMENT_TARGET="11.0"
-          ld_path=""
-          for name in "${prefix}-ld" "${prefix}-ld64" "ld64" "ld"; do
-            if [ -x "${osxcross_bin}/${name}" ]; then
-              ld_path="${osxcross_bin}/${name}"
-              break
-            fi
-          done
-          export "CC_${target_env}=${osxcross_bin}/${prefix}-clang"
-          export "CXX_${target_env}=${osxcross_bin}/${prefix}-clang++"
-          export "AR_${target_env}=${osxcross_bin}/${prefix}-ar"
-          export "RANLIB_${target_env}=${osxcross_bin}/${prefix}-ranlib"
-          export "CARGO_TARGET_${target_env_upper}_LINKER=${osxcross_bin}/${prefix}-clang"
-          if [ -n "${ld_path}" ]; then
-            export "CFLAGS_${target_env}=-fuse-ld=${ld_path}"
-            export "CXXFLAGS_${target_env}=-fuse-ld=${ld_path}"
-            export "LDFLAGS_${target_env}=-fuse-ld=${ld_path}"
-            export RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-C link-arg=-fuse-ld=${ld_path}"
-          fi
-          cargo build --release --no-default-features --bin ${{ env.BINARY_NAME }} --target ${{ matrix.target }}
-          mkdir -p dist
-          cp target/${{ matrix.target }}/release/${{ env.BINARY_NAME }} \
-            dist/${{ env.BINARY_NAME }}-macos-${{ matrix.suffix }}
+          cargo build --release \
+            --no-default-features \
+            --bin ${{ env.BINARY_NAME }} \
+            --target ${{ matrix.target }}
 
-      - name: Upload macOS slice
+      - name: Upload slice ${{ matrix.arch }}
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.BINARY_NAME }}-macos-slice-${{ matrix.arch }}
-          path: dist/*
+          name: slice-${{ matrix.arch }}
+          path: target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}
 
   build-macos-universal:
     name: Create Universal macOS DMG

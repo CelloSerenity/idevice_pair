@@ -5,8 +5,8 @@ use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::{
     backend::{
-        self, Backend, Check, Command, DeviceInfo, DeviceKey, DeviceSummary, Event, InstalledApp,
-        PairingKind, PairingResult, WirelessStatus,
+        self, AppleTv, Backend, Check, Command, DeviceInfo, DeviceKey, DeviceSummary, Event,
+        InstalledApp, PairingKind, PairingResult, WirelessStatus,
     },
     logging::Logs,
     ui,
@@ -73,8 +73,12 @@ impl Page {
 }
 
 pub enum Wireless {
-    Advertising(String),
+    Discovering {
+        host: String,
+        apple_tvs: Vec<AppleTv>,
+    },
     Connected,
+    EnterPin(String),
     Pin(String),
     Failed(String),
 }
@@ -128,6 +132,16 @@ impl App {
     pub fn stop_wireless_pairing(&mut self) {
         self.wireless = None;
         self.backend.send(Command::StopWirelessPairing);
+    }
+
+    pub fn submit_wireless_pin(&mut self, pin: String) {
+        self.wireless = Some(Wireless::Connected);
+        self.backend.send(Command::SubmitWirelessPin(pin));
+    }
+
+    pub fn pair_apple_tv(&mut self, id: String) {
+        self.wireless = Some(Wireless::Connected);
+        self.backend.send(Command::PairAppleTv(id));
     }
 
     pub fn act(&mut self, key: &DeviceKey, action: Action) {
@@ -222,9 +236,18 @@ impl App {
             }
             Event::Wireless(status) => match status {
                 WirelessStatus::Advertising(name) => {
-                    self.wireless = Some(Wireless::Advertising(name))
+                    self.wireless = Some(Wireless::Discovering {
+                        host: name,
+                        apple_tvs: Vec::new(),
+                    })
+                }
+                WirelessStatus::AppleTvs(devices) => {
+                    if let Some(Wireless::Discovering { apple_tvs, .. }) = &mut self.wireless {
+                        *apple_tvs = devices;
+                    }
                 }
                 WirelessStatus::Connected => self.wireless = Some(Wireless::Connected),
+                WirelessStatus::EnterPin => self.wireless = Some(Wireless::EnterPin(String::new())),
                 WirelessStatus::Pin(pin) => self.wireless = Some(Wireless::Pin(pin)),
                 WirelessStatus::Failed(message) => self.wireless = Some(Wireless::Failed(message)),
                 WirelessStatus::Paired(key) => {

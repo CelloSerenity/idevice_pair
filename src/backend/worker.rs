@@ -5,6 +5,7 @@ use std::{
 };
 
 use eframe::egui;
+use futures_util::future::{Either, select};
 use idevice::{
     IdeviceError,
     remote_pairing::RpPairingFile,
@@ -12,7 +13,7 @@ use idevice::{
 };
 use tokio::sync::{
     Mutex, OwnedMutexGuard,
-    mpsc::{UnboundedReceiver, unbounded_channel},
+    mpsc::{UnboundedReceiver, UnboundedSender, unbounded_channel},
 };
 use tracing::debug;
 
@@ -65,6 +66,8 @@ struct Worker {
     identity: HostIdentity,
     devices: Mutex<HashMap<DeviceKey, Device>>,
     pairing_task: Mutex<Option<tokio::task::JoinHandle<()>>>,
+    wireless_device: Mutex<Option<UnboundedSender<String>>>,
+    wireless_pin: Mutex<Option<UnboundedSender<String>>>,
 }
 
 struct Device {
@@ -125,6 +128,8 @@ impl Worker {
             identity: HostIdentity::generate(),
             devices: Mutex::new(HashMap::new()),
             pairing_task: Mutex::new(None),
+            wireless_device: Mutex::new(None),
+            wireless_pin: Mutex::new(None),
         }
     }
 
@@ -136,6 +141,8 @@ impl Worker {
             Command::Validate { key, ip } => self.validate(key, ip).await,
             Command::Install { key, app } => self.install(key, app).await,
             Command::StartWirelessPairing => self.start_wireless_pairing().await,
+            Command::PairAppleTv(id) => self.pair_apple_tv(id).await,
+            Command::SubmitWirelessPin(pin) => self.submit_wireless_pin(pin).await,
             Command::StopWirelessPairing => self.stop_wireless_pairing().await,
         }
     }
@@ -343,7 +350,20 @@ impl Worker {
     }
 
     async fn run_wireless_pairing(self: Arc<Self>) {
-        match wireless::accept_pairing(&self.identity, &self.events).await {
+        let (device_sender, device_receiver) = unbounded_channel();
+        let (pin_sender, pin_receiver) = unbounded_channel();
+        *self.wireless_device.lock().await = Some(device_sender);
+        *self.wireless_pin.lock().await = Some(pin_sender);
+
+        let ios = wireless::accept_pairing(&self.identity, &self.events);
+        let apple_tv = wireless::pair_apple_tv(&self.events, device_receiver, pin_receiver);
+        let result = match select(Box::pin(ios), Box::pin(apple_tv)).await {
+            Either::Left((result, _)) | Either::Right((result, _)) => result,
+        };
+
+        *self.wireless_device.lock().await = None;
+        *self.wireless_pin.lock().await = None;
+        match result {
             Ok(device) => {
                 let key = self.add_wireless(device).await;
                 self.events
@@ -361,6 +381,20 @@ impl Worker {
         let task = self.pairing_task.lock().await.take();
         if let Some(task) = task {
             task.abort();
+        }
+        *self.wireless_device.lock().await = None;
+        *self.wireless_pin.lock().await = None;
+    }
+
+    async fn pair_apple_tv(&self, id: String) {
+        if let Some(sender) = self.wireless_device.lock().await.take() {
+            let _ = sender.send(id);
+        }
+    }
+
+    async fn submit_wireless_pin(&self, pin: String) {
+        if let Some(sender) = self.wireless_pin.lock().await.take() {
+            let _ = sender.send(pin);
         }
     }
 

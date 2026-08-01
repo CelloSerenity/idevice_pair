@@ -4,8 +4,8 @@ A cross-platform GUI for creating iOS pairing files, over USB or over Wi-Fi.
 
 ## Features
 
-- **Devices over USB and Wi-Fi**: usbmuxd devices show up automatically, and a device
-  running iOS 27 or later can pair to this computer over the network with no cable
+- **Devices over USB and Wi-Fi**: usbmuxd devices show up automatically, and Apple TV
+  or a device running iOS 27 or later can pair over the network with no cable
 - **Pairing files**: create a lockdown or a remote pairing (RPPairing) file on either transport
 - **Two destinations**: save the file to disk, or write it straight into an app's
   Documents directory over AFC
@@ -76,7 +76,7 @@ cargo run --release
 A device usbmuxd sees over Wi-Fi is already paired, so it appears in the dropdown too
 and works the same as a cabled one, without the cable.
 
-### Over Wi-Fi
+### Over Wi-Fi with iPhone or iPad
 
 Requires iOS 27 or later, with both the device and computer on the same network.
 
@@ -90,6 +90,14 @@ RPPairing record created by Wi-Fi onboarding is loaded automatically on the devi
 page. Lockdown pairing is unavailable for this transport; connect through usbmuxd
 to obtain a lockdown pairing file.
 
+### Over Wi-Fi with Apple TV
+
+1. Put the Apple TV into manual remote pairing mode
+2. Click `Pair over Wi-Fi`
+3. Select the Apple TV from the discovered devices
+4. Enter the code shown on the Apple TV
+5. The Apple TV joins the dropdown for as long as the app is open
+
 ## Troubleshooting
 
 ### Device not detected
@@ -99,6 +107,7 @@ to obtain a lockdown pairing file.
 ### Wireless pairing doesn't show this computer
 - Both sides must be on the same network, with mDNS not blocked
 - Only iOS 27 and later can start pairing from the device
+- For Apple TV, make sure manual pairing mode is open before starting
 
 ### Pairing file doesn't work in an app
 - Check the app expects the kind of file you created

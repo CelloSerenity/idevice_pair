@@ -1,19 +1,24 @@
 use std::{
+    collections::HashMap,
     net::{IpAddr, SocketAddr, SocketAddrV6},
     time::Duration,
 };
 
 use idevice::{IdeviceError, pairing_file::PairingFile, remote_pairing::PeerDevice};
 use mdns_sd::{ResolvedService, ScopedIp, ServiceDaemon, ServiceEvent};
-use tokio::net::TcpStream;
+use tokio::{net::TcpStream, sync::mpsc::UnboundedReceiver};
 use tracing::debug;
 
+use super::AppleTv;
+
 const REMOTE_PAIRING: &str = "_remotepairing._tcp.local.";
+const MANUAL_PAIRING: &str = "_remotepairing-manual-pairing._tcp.local.";
 const LOCKDOWN: &str = "_apple-mobdev2._tcp.local.";
 pub(super) const LOCKDOWN_PORT: u16 = 62078;
 const BROWSE_TIMEOUT: Duration = Duration::from_secs(6);
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(4);
 
+#[derive(Clone)]
 pub struct Addresses(SocketAddr);
 
 impl Addresses {
@@ -55,6 +60,49 @@ pub async fn find_remote_pairing(alt_irk: &[u8]) -> Option<Addresses> {
         }
     })
     .await
+}
+
+pub async fn select_manual_pairing(
+    mut selection: UnboundedReceiver<String>,
+    mut update: impl FnMut(Vec<AppleTv>),
+) -> Option<Addresses> {
+    let daemon = ServiceDaemon::new().ok()?;
+    let receiver = daemon.browse(MANUAL_PAIRING).ok()?;
+    let mut services = HashMap::<String, (String, Addresses)>::new();
+
+    let found = loop {
+        let event = receiver.recv_async();
+        let selected = selection.recv();
+        match futures_util::future::select(Box::pin(event), Box::pin(selected)).await {
+            futures_util::future::Either::Left((Ok(ServiceEvent::ServiceResolved(service)), _)) => {
+                debug!("resolved {}", service.fullname);
+                let Some(addresses) = address(&service) else {
+                    continue;
+                };
+                let name = service
+                    .get_property_val_str("name")
+                    .unwrap_or_else(|| service.fullname.split('.').next().unwrap_or("Apple TV"))
+                    .to_string();
+                services.insert(service.fullname.clone(), (name, addresses));
+                update(apple_tvs(&services));
+            }
+            futures_util::future::Either::Left((Ok(ServiceEvent::ServiceRemoved(_, id)), _)) => {
+                services.remove(&id);
+                update(apple_tvs(&services));
+            }
+            futures_util::future::Either::Left((Ok(_), _)) => {}
+            futures_util::future::Either::Left((Err(_), _)) => break None,
+            futures_util::future::Either::Right((Some(id), _)) => {
+                if let Some((_, addresses)) = services.get(&id) {
+                    break Some(addresses.clone());
+                }
+            }
+            futures_util::future::Either::Right((None, _)) => break None,
+        }
+    };
+
+    let _ = daemon.shutdown();
+    found
 }
 
 pub async fn find_lockdown(pairing_file: &PairingFile) -> Option<Addresses> {
@@ -124,4 +172,16 @@ async fn browse<T>(
 
     let _ = daemon.shutdown();
     found
+}
+
+fn apple_tvs(services: &HashMap<String, (String, Addresses)>) -> Vec<AppleTv> {
+    let mut devices: Vec<_> = services
+        .iter()
+        .map(|(id, (name, _))| AppleTv {
+            id: id.clone(),
+            name: name.clone(),
+        })
+        .collect();
+    devices.sort_by_key(|device| device.name.to_lowercase());
+    devices
 }

@@ -67,7 +67,7 @@ cargo run --release
 
 1. Connect the device and tap `Trust` if asked
 2. Pick it from the device dropdown
-3. Choose `Lockdown` or `Remote pairing`, then click `Create`
+3. Choose `Lockdown` or `Remote pairing`, then click `Load/Generate`
    - Remote pairing needs iOS 17.4 or later; lockdown works everywhere
    - Lockdown reuses the record usbmuxd already holds, and only pairs if there isn't one
    - Keep the device unlocked on the home screen while pairing
@@ -92,7 +92,7 @@ to obtain a lockdown pairing file.
 
 ### Over Wi-Fi with Apple TV
 
-1. Put the Apple TV into manual remote pairing mode
+1. Put the Apple TV into manual remote pairing mode by choosing Settings > Remotes and Devices > Remote App and Devices.
 2. Click `Pair over Wi-Fi`
 3. Select the Apple TV from the discovered devices
 4. Enter the code shown on the Apple TV

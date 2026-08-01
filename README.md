@@ -27,7 +27,7 @@ Apps with a known pairing file location:
 - [Reynard Browser](https://github.com/minh-ton/reynard-browser)
 - [Auto Capture](https://apps.apple.com/us/app/dev-auto-capture/id6755616902)
 - [StosDebug](https://github.com/stossy11/StosDebug)
-- [StikStore](https://github.com/StephenDev0/StikDebug)
+- [StikStore](https://stikstore.app/)
 
 ## Prerequisites
 

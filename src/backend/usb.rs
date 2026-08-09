@@ -55,6 +55,7 @@ pub async fn watch(changes: UnboundedSender<()>) {
 async fn listen(changes: &UnboundedSender<()>) -> Result<(), IdeviceError> {
     let mut connection = UsbmuxdConnection::default().await?;
     let mut stream = connection.listen().await?;
+    changes.send(()).expect("device watcher stopped");
 
     while let Some(event) = stream.next().await {
         match event? {

@@ -20,7 +20,7 @@ idevice = { version = "0.1.65", features = [
   "tunnel_tcp_stack",
   "usbmuxd",
 ] }
-eframe = "0.35.0"
+eframe = { version = "0.35.0", features = ["glow"] }
 rfd = "0.17"
 tokio = { version = "1.53", features = ["rt-multi-thread", "net", "sync", "time"] }
 futures-util = "0.3.33"

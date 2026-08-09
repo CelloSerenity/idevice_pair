@@ -31,8 +31,21 @@ fn native_options() -> eframe::NativeOptions {
         viewport.with_icon(std::sync::Arc::new(icon))
     };
 
+    #[cfg(any(
+        all(target_os = "macos", target_arch = "x86_64"),
+        all(target_os = "linux", target_arch = "aarch64")
+    ))]
+    let renderer = eframe::Renderer::Glow;
+
+    #[cfg(not(any(
+        all(target_os = "macos", target_arch = "x86_64"),
+        all(target_os = "linux", target_arch = "aarch64")
+    )))]
+    let renderer = eframe::Renderer::Wgpu;
+
     eframe::NativeOptions {
         viewport,
+        renderer,
         ..Default::default()
     }
 }

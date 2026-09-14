@@ -126,7 +126,6 @@ pub enum WirelessStatus {
     Advertising(String),
     Connected,
     EnterPin(String),
-    Pin(String),
     Paired(DeviceKey),
     Failed(String),
 }

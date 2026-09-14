@@ -90,7 +90,7 @@ pub fn wireless_modal(app: &mut App, ctx: &egui::Context) {
                 widgets::spinner(ui);
             }
             Wireless::Connected => {
-                ui.label("A device connected. Waiting for a code…");
+                ui.label("A device connected. Pairing…");
                 ui.add_space(6.0);
                 widgets::spinner(ui);
             }
@@ -116,11 +116,6 @@ pub fn wireless_modal(app: &mut App, ctx: &egui::Context) {
                 ui.label("Pairing with Apple TV…");
                 ui.add_space(6.0);
                 widgets::spinner(ui);
-            }
-            Wireless::Pin(pin) => {
-                ui.label("Enter this code on your device:");
-                ui.add_space(6.0);
-                ui.label(RichText::new(pin.as_str()).monospace().size(30.0).strong());
             }
             Wireless::Failed(message) => widgets::error(ui, message),
         }

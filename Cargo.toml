@@ -5,7 +5,7 @@ edition = "2024"
 rust-version = "1.92"
 
 [dependencies]
-idevice = { version = "0.1.65", features = [
+idevice = { git = "https://github.com/jkcoxson/idevice.git", rev = "1838db107d38701b4044361163aac049006c2627", features = [
   "afc",
   "core_device_proxy",
   "house_arrest",

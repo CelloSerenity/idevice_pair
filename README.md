@@ -82,7 +82,7 @@ Requires iOS 27 or later, with both the device and computer on the same network.
 
 1. Click `Pair over Wi-Fi`
 2. Pick this computer on your device
-3. Accept the pairing request on your device
+3. Type the code shown by idevice_pair into your device
 4. The device joins the dropdown for as long as the app is open
 
 The remote pairing is only kept in memory, so pair again after a restart. The

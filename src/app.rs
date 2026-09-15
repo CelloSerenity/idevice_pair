@@ -79,6 +79,7 @@ pub enum Wireless {
     Connected,
     EnterPin { host: String, pin: String },
     PairingAppleTv,
+    Pin(String),
     Failed(String),
 }
 
@@ -246,6 +247,7 @@ impl App {
                         pin: String::new(),
                     })
                 }
+                WirelessStatus::Pin(pin) => self.wireless = Some(Wireless::Pin(pin)),
                 WirelessStatus::Failed(message) => self.wireless = Some(Wireless::Failed(message)),
                 WirelessStatus::Paired(key) => {
                     self.wireless = None;

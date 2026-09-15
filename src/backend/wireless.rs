@@ -26,10 +26,8 @@ pub struct HostIdentity {
 
 impl HostIdentity {
     pub fn generate() -> Self {
-        let mut info = PairableHostInfo::generate(host_label(), MODEL);
-        info.allows_pinless_pairing = true;
         Self {
-            info,
+            info: PairableHostInfo::generate(host_label(), MODEL),
             pairing_file: RpPairingFile::generate(host_label()),
         }
     }
@@ -57,7 +55,11 @@ pub async fn accept_pairing(
 
     let mut pairing_file = identity.pairing_file.clone();
     let mut host = PairableHost::new(RpPairingSocket::new_device(stream), identity.info.clone());
-    let peer = host.accept(&mut pairing_file, |_| async {}).await?;
+    let peer = host
+        .accept(&mut pairing_file, |pin| async {
+            events.send(Event::Wireless(WirelessStatus::Pin(pin)));
+        })
+        .await?;
 
     Ok(WirelessDevice {
         udid: peer.remotepairing_udid,

@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use idevice::{
     IdeviceError, IdeviceService, ReadWrite, RsdService,
-    core_device_proxy::CoreDeviceProxy,
     lockdown::LockdownClient,
     provider::{IdeviceProvider, RsdProvider, UsbmuxdProvider},
     remote_pairing::{RemotePairingClient, RpPairingSocket},
@@ -36,13 +35,6 @@ impl Link {
             provider: device.to_provider(UsbmuxdAddr::default(), host_label()),
             needs_session: device.connection_type != Connection::Usb,
         }
-    }
-
-    pub async fn over_core_device(provider: &dyn IdeviceProvider) -> Result<Self, IdeviceError> {
-        let proxy = CoreDeviceProxy::connect(provider).await?;
-        let rsd_port = proxy.tunnel_info().server_rsd_port;
-        let handle = proxy.create_software_tunnel()?.to_async_handle();
-        Self::rsd(handle, rsd_port, None).await
     }
 
     pub async fn over_remote_pairing(

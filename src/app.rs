@@ -123,6 +123,16 @@ impl App {
             page.kind = PairingKind::Remote;
         }
 
+        if transport != Some(backend::Transport::Remote)
+            && page.kind == PairingKind::Remote
+            && matches!(page.pairing, Task::Idle)
+        {
+            page.pairing = Task::Busy;
+            self.backend.send(Command::CreatePairing {
+                key: key.clone(),
+                kind: PairingKind::Remote,
+            });
+        }
         self.backend.send(Command::Inspect(key));
     }
 

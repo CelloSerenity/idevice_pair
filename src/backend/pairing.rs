@@ -1,8 +1,9 @@
 use super::{DeviceKey, Events, host_label, link::Link};
 use idevice::{
-    IdeviceError, RemoteXpcClient,
+    IdeviceError, IdeviceService, RemoteXpcClient,
     pairing_file::PairingFile,
-    remote_pairing::{RemotePairingClient, RpPairingFile},
+    provider::IdeviceProvider,
+    remote_pairing::{RemotePairingClient, RemotePairingLockdownService, RpPairingFile},
 };
 
 const RP_FILE_NAME: &str = "pairingFile.plist";
@@ -87,26 +88,36 @@ pub async fn stored_lockdown_file(udid: &str) -> Result<PairingFile, IdeviceErro
 }
 
 pub async fn remote_file(
-    link: &mut Link,
+    provider: &dyn IdeviceProvider,
     events: &Events,
     key: &DeviceKey,
 ) -> Result<RpPairingFile, IdeviceError> {
     let mut file = RpPairingFile::generate(host_label());
-    for message in [
-        "Trust this computer on your device",
-        "Saving the pairing on the device",
-    ] {
-        events.progress(key, message);
-        tunnel_service_client(link)
-            .await?
-            .connect(&mut file, || async { "000000".to_string() })
-            .await?;
-    }
+    events.progress(key, "Trust this computer on your device");
+    RemotePairingLockdownService::connect(provider)
+        .await?
+        .into_client(host_label())?
+        .connect(&mut file, || async { "000000".to_string() })
+        .await?;
 
     Ok(file)
 }
 
-pub async fn verify_remote(link: &mut Link, file: &mut RpPairingFile) -> Result<(), IdeviceError> {
+pub async fn verify_remote(
+    provider: &dyn IdeviceProvider,
+    file: &mut RpPairingFile,
+) -> Result<(), IdeviceError> {
+    let mut client = RemotePairingLockdownService::connect(provider)
+        .await?
+        .into_client(host_label())?;
+    client.attempt_pair_verify().await?;
+    client.validate_pairing(file).await
+}
+
+pub async fn verify_remote_over_tunnel(
+    link: &mut Link,
+    file: &mut RpPairingFile,
+) -> Result<(), IdeviceError> {
     let mut client = tunnel_service_client(link).await?;
     client.attempt_pair_verify().await?;
     client.validate_pairing(file).await

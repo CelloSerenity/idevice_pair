@@ -113,16 +113,6 @@ impl State {
         self.link = Some(link.clone());
         Ok(link)
     }
-
-    async fn tunnel(&mut self, events: &Events, key: &DeviceKey) -> Result<Link, IdeviceError> {
-        match self.link().await? {
-            link @ Link::Rsd { .. } => Ok(link),
-            Link::Usbmuxd { provider, .. } => {
-                events.progress(key, "Opening a tunnel to the device");
-                Link::over_core_device(&provider).await
-            }
-        }
-    }
 }
 
 impl Worker {
@@ -286,8 +276,11 @@ impl Worker {
                 if let Source::Remote(pairing_file) = &state.source {
                     Ok(Payload::Remote(pairing_file.clone()))
                 } else {
-                    let mut tunnel = state.tunnel(&self.events, key).await?;
-                    pairing::remote_file(&mut tunnel, &self.events, key)
+                    let link = state.link().await?;
+                    let Link::Usbmuxd { provider, .. } = link else {
+                        return Err(IdeviceError::ServiceNotFound);
+                    };
+                    pairing::remote_file(&provider, &self.events, key)
                         .await
                         .map(|file| Payload::Remote(Box::new(file)))
                 }
@@ -302,8 +295,13 @@ impl Worker {
 
         let result = match state.pairing.clone() {
             Some(Payload::Lockdown(file)) => validate::lockdown_over_lan(&file, ip).await,
-            Some(Payload::Remote(mut file)) => match state.tunnel(&self.events, &key).await {
-                Ok(mut tunnel) => pairing::verify_remote(&mut tunnel, &mut file).await,
+            Some(Payload::Remote(mut file)) => match state.link().await {
+                Ok(Link::Usbmuxd { provider, .. }) => {
+                    pairing::verify_remote(&provider, &mut file).await
+                }
+                Ok(mut link @ Link::Rsd { .. }) => {
+                    pairing::verify_remote_over_tunnel(&mut link, &mut file).await
+                }
                 Err(e) => Err(e),
             },
             None => Err(IdeviceError::InternalError(

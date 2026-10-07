@@ -38,7 +38,9 @@ Apps with a known pairing file location:
 ## Installation
 
 ### macOS
-1. Download [idevice_pair for macOS](https://github.com/jkcoxson/idevice_pair/releases/latest/download/idevice_pair--macos-universal.dmg)
+1. Download idevice_pair for your Mac:
+   - [Intel (x86_64)](https://github.com/jkcoxson/idevice_pair/releases/latest/download/idevice_pair--macos-x86_64.dmg)
+   - [Apple Silicon (ARM64)](https://github.com/jkcoxson/idevice_pair/releases/latest/download/idevice_pair--macos-arm64.dmg)
 2. Open the disk image and drag `idevice_pair` to `Applications`
 
 ### Windows

@@ -139,8 +139,8 @@ jobs:
           name: ${{ env.APP_NAME }}--windows-${{ matrix.arch }}
           path: dist/*.exe
 
-  build-macos-slices:
-    name: Build macOS slices
+  build-macos:
+    name: Build macOS ${{ matrix.arch }}
     runs-on: macos-latest
     strategy:
       matrix:
@@ -149,6 +149,10 @@ jobs:
             target: x86_64-apple-darwin
           - arch: arm64
             target: aarch64-apple-darwin
+
+    env:
+      HAVE_SIGNING_SECRETS: ${{ secrets.DEV_ID_P12_BASE64 != '' && secrets.DEV_ID_P12_PASSWORD != '' && secrets.DEV_IDENTITY_NAME != '' }}
+      HAVE_NOTARIZE_SECRETS: ${{ secrets.NOTARIZE_APPLE_ID != '' && secrets.NOTARIZE_APP_SPECIFIC_PASS != '' && secrets.NOTARIZE_TEAM_ID != '' }}
 
     steps:
       - uses: actions/checkout@v6
@@ -164,28 +168,11 @@ jobs:
         with:
           key: ${{ matrix.target }}
 
-      - name: Build ${{ matrix.arch }} slice
+      - name: Build ${{ matrix.arch }} binary
         run: |
           cargo build --release \
             --bin ${{ env.BINARY_NAME }} \
             --target ${{ matrix.target }}
-
-      - name: Upload slice ${{ matrix.arch }}
-        uses: actions/upload-artifact@v7
-        with:
-          name: slice-${{ matrix.arch }}
-          path: target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}
-
-  build-macos-universal:
-    name: Create Universal macOS DMG
-    runs-on: macos-latest
-    needs: build-macos-slices
-    env:
-      HAVE_SIGNING_SECRETS: ${{ secrets.DEV_ID_P12_BASE64 != '' && secrets.DEV_ID_P12_PASSWORD != '' && secrets.DEV_IDENTITY_NAME != '' }}
-      HAVE_NOTARIZE_SECRETS: ${{ secrets.NOTARIZE_APPLE_ID != '' && secrets.NOTARIZE_APP_SPECIFIC_PASS != '' && secrets.NOTARIZE_TEAM_ID != '' }}
-
-    steps:
-      - uses: actions/checkout@v6
 
       - name: Free disk space
         run: |
@@ -197,18 +184,6 @@ jobs:
           sudo rm -rf /usr/local/lib/node_modules
           df -h
 
-      - name: Download x86_64 slice
-        uses: actions/download-artifact@v8
-        with:
-          name: slice-x86_64
-          path: slice-x86_64
-
-      - name: Download arm64 slice
-        uses: actions/download-artifact@v8
-        with:
-          name: slice-arm64
-          path: slice-arm64
-
       - name: Import Developer ID Certificate
         if: env.HAVE_SIGNING_SECRETS == 'true'
         uses: apple-actions/import-codesign-certs@v6
@@ -216,18 +191,13 @@ jobs:
           p12-file-base64: ${{ secrets.DEV_ID_P12_BASE64 }}
           p12-password: ${{ secrets.DEV_ID_P12_PASSWORD }}
 
-      - name: Create Universal App
+      - name: Create App
         run: |
           APP="${{ env.APP_NAME }}.app"
           VERSION="$(awk -F '"' '/^version = / { print $2; exit }' Cargo.toml)"
           mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
-          lipo slice-x86_64/${{ env.BINARY_NAME }} \
-               slice-arm64/${{ env.BINARY_NAME }} \
-            -create -output "$APP/Contents/MacOS/${{ env.APP_NAME }}"
-
-          rm -rf slice-x86_64
-          rm -rf slice-arm64
+          cp "target/${{ matrix.target }}/release/${{ env.BINARY_NAME }}" "$APP/Contents/MacOS/${{ env.APP_NAME }}"
 
           cat > "$APP/Contents/Info.plist" <<EOF
           <?xml version="1.0" encoding="UTF-8"?>
@@ -266,7 +236,7 @@ jobs:
 
       - name: Create DMG
         run: |
-          DMG="dist/${{ env.APP_NAME }}--macos-universal.dmg"
+          DMG="dist/${{ env.APP_NAME }}--macos-${{ matrix.arch }}.dmg"
           mkdir -p dist dmg-staging
           trap 'rm -rf dmg-staging' EXIT
           mv "${{ env.APP_NAME }}.app" dmg-staging/
@@ -293,11 +263,11 @@ jobs:
             --wait --verbose
           xcrun stapler staple "$DMG"
 
-      - name: Upload Universal DMG
+      - name: Upload ${{ matrix.arch }} DMG
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.APP_NAME }}--macos-universal
-          path: dist/${{ env.APP_NAME }}--macos-universal.dmg
+          name: ${{ env.APP_NAME }}--macos-${{ matrix.arch }}
+          path: dist/${{ env.APP_NAME }}--macos-${{ matrix.arch }}.dmg
 
   release:
     name: GitHub Release
@@ -305,7 +275,7 @@ jobs:
     needs:
       - build-linux
       - build-windows
-      - build-macos-universal
+      - build-macos
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: write
@@ -330,10 +300,16 @@ jobs:
           name: ${{ env.APP_NAME }}--windows-x86_64
           path: release-assets
 
-      - name: Download macOS universal artifact
+      - name: Download macOS Intel artifact
         uses: actions/download-artifact@v8
         with:
-          name: ${{ env.APP_NAME }}--macos-universal
+          name: ${{ env.APP_NAME }}--macos-x86_64
+          path: release-assets
+
+      - name: Download macOS ARM artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ env.APP_NAME }}--macos-arm64
           path: release-assets
 
       - name: Extract version
